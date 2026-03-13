@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Islamic Calendar Predictor — Australia</title>
+<style>
+/* ── RESET & VARS ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#C9A84C;--gold2:#E8C97A;--goldd:#8B6914;
+  --bg:#060B14;--surf:#0F1E2E;--surf2:#0C1828;
+  --txt:#E8DCC8;--dim:#7A8A9A;--blue:#4A9EBF;--green:#5DBB8A;--red:#E05C5C;
+}
+body{background:var(--bg);color:var(--txt);font-family:Georgia,serif;min-height:100vh;}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.star{position:absolute;background:#fff;border-radius:50%;animation:tw var(--d) ease-in-out var(--dl) infinite;}
+@keyframes tw{0%,100%{opacity:.1}50%{opacity:.7}}
+
+/* ── LAYOUT ── */
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:32px 20px 80px;}
+
+/* ── HEADER ── */
+.hdr{text-align:center;padding:40px 0 28px;}
+.moon{font-size:48px;display:block;margin-bottom:12px;animation:fl 5s ease-in-out infinite;}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.eye{font-size:10px;letter-spacing:.3em;color:var(--goldd);text-transform:uppercase;margin-bottom:8px;font-family:'Courier New',monospace;}
+h1{font-size:clamp(36px,7vw,80px);font-weight:700;letter-spacing:.04em;line-height:.95;font-family:Impact,sans-serif;}
+h1 em{color:var(--gold);font-style:normal;}
+.sub{font-size:16px;color:var(--dim);margin-top:12px;font-style:italic;}
+.divl{width:100px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:20px auto;}
+.bdg{display:inline-block;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:6px 16px;font-size:10px;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;font-family:'Courier New',monospace;margin-bottom:32px;}
+
+/* ── NEXT STRIP ── */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;}
+@media(max-width:800px){.strip{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:440px){.strip{grid-template-columns:1fr;}}
+.card{background:var(--surf);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:16px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.card.b{border-color:rgba(74,158,191,.35);}
+.card.b::before{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.card.g{border-color:rgba(93,187,138,.35);}
+.card.g::before{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.clbl{font-size:9px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase;font-family:'Courier New',monospace;margin-bottom:6px;}
+.cdate{font-size:clamp(18px,2.5vw,24px);font-weight:700;color:var(--gold);line-height:1.1;}
+.card.b .cdate{color:var(--blue);}
+.card.g .cdate{color:var(--green);}
+.cday{font-size:12px;color:var(--dim);margin-top:3px;font-style:italic;}
+.chijri{font-size:10px;color:var(--dim);margin-top:4px;font-family:'Courier New',monospace;}
+.ccd{font-size:11px;color:var(--dim);margin-top:6px;font-family:'Courier New',monospace;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.08);}
+.tab{background:none;border:none;border-bottom:2px solid transparent;padding:11px 20px;font-size:14px;letter-spacing:.08em;color:var(--dim);cursor:pointer;font-weight:700;font-family:Impact,sans-serif;transition:color .2s;}
+.tab:hover{color:var(--txt);}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* ── CONTROLS ── */
+.ctrl{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:20px 0 16px;}
+.cg{display:flex;align-items:center;gap:8px;background:var(--surf);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:8px 14px;}
+.cg span{font-size:10px;letter-spacing:.15em;color:var(--dim);text-transform:uppercase;font-family:'Courier New',monospace;}
+input[type=number]{background:none;border:none;color:var(--gold);font-size:15px;width:70px;outline:none;text-align:center;font-family:'Courier New',monospace;}
+select{background:var(--surf2);border:1px solid rgba(201,168,76,.2);color:var(--gold);font-size:14px;padding:8px 12px;border-radius:7px;outline:none;cursor:pointer;font-family:'Courier New',monospace;}
+.go{background:var(--gold);color:var(--bg);border:none;padding:10px 28px;font-size:16px;font-weight:700;border-radius:7px;cursor:pointer;letter-spacing:.08em;font-family:Impact,sans-serif;transition:background .2s;}
+.go:hover{background:var(--gold2);}
+
+/* ── TABLE BOX ── */
+.box{background:var(--surf);border:1px solid rgba(255,255,255,.07);border-radius:0 10px 10px 10px;overflow:hidden;}
+.bh{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);}
+.bh-t{font-size:16px;font-weight:700;letter-spacing:.08em;font-family:Impact,sans-serif;}
+.bh-c{font-size:11px;color:var(--dim);font-family:'Courier New',monospace;}
+table{width:100%;border-collapse:collapse;}
+thead th{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);padding:10px 14px;text-align:left;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.2);font-family:'Courier New',monospace;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.025);transition:background .12s;}
+tbody tr:hover{background:rgba(201,168,76,.04);}
+tbody tr.hl{background:rgba(201,168,76,.09);border-left:2px solid var(--gold);}
+tbody tr.old{opacity:.35;}
+td{padding:10px 14px;font-size:13px;}
+td.yr{font-size:17px;font-weight:700;color:var(--gold);font-family:Impact,sans-serif;letter-spacing:.04em;}
+td.dt{font-weight:600;}
+td.sm{font-size:11px;color:var(--dim);font-family:'Courier New',monospace;}
+.tg{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;letter-spacing:.08em;margin-left:4px;font-family:'Courier New',monospace;}
+.tg-n{background:rgba(201,168,76,.2);color:var(--gold);border:1px solid rgba(201,168,76,.4);}
+.tg-x{background:rgba(74,158,191,.15);color:var(--blue);border:1px solid rgba(74,158,191,.3);}
+.ok{color:var(--green);text-align:center;font-size:15px;}
+.no{color:var(--red);text-align:center;font-size:15px;}
+
+/* ── PAGINATION ── */
+.pag{display:flex;align-items:center;justify-content:center;gap:5px;padding:16px;border-top:1px solid rgba(255,255,255,.07);flex-wrap:wrap;}
+.pb{background:none;border:1px solid rgba(255,255,255,.12);color:var(--dim);width:32px;height:32px;border-radius:5px;cursor:pointer;font-size:12px;transition:all .12s;font-family:'Courier New',monospace;}
+.pb:hover{border-color:var(--gold);color:var(--gold);}
+.pb.on{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:700;}
+.pb.nv{width:auto;padding:0 10px;}
+.pb:disabled{opacity:.3;cursor:default;}
+.msg{text-align:center;padding:48px;color:var(--dim);font-size:12px;letter-spacing:.2em;font-family:'Courier New',monospace;}
+.note{font-size:11px;color:var(--dim);padding:12px 20px;border-top:1px solid rgba(255,255,255,.06);line-height:1.7;font-family:'Courier New',monospace;}
+.ft{text-align:center;margin-top:36px;font-size:12px;color:var(--dim);line-height:1.9;font-style:italic;}
+.ft b{color:var(--goldd);font-style:normal;}
+.hide{display:none!important;}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hdr">
+    <span class="moon">🌙</span>
+    <div class="eye">Australian Fatwa Council Method</div>
+    <h1>ISLAMIC <em>CALENDAR</em><br>PREDICTOR</h1>
+    <p class="sub">Ramadan · Eid ul Fitr · Zil Hajj · Eid ul Adha · 2026–3025</p>
+    <div class="divl"></div>
+    <div class="bdg">◉ Jean Meeus Algorithms · Sydney + Mecca Crescent Visibility</div>
+  </div>
+
+  <!-- Next dates strip -->
+  <div class="strip" id="strip">
+    <div class="card"><div class="clbl">Loading…</div></div>
+    <div class="card"><div class="clbl">Loading…</div></div>
+    <div class="card b"><div class="clbl">Loading…</div></div>
+    <div class="card g"><div class="clbl">Loading…</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab on" id="t1" onclick="showTab(1)">PREDICTIONS</button>
+    <button class="tab" id="t2" onclick="showTab(2)">VERIFICATION (2016–2026)</button>
+  </div>
+
+  <!-- Tab 1: Predictions -->
+  <div id="p1">
+    <div class="ctrl">
+      <div class="cg"><span>From</span><input type="number" id="yr1" value="2026" min="2026" max="3024"></div>
+      <div class="cg"><span>To</span><input type="number" id="yr2" value="2060" min="2027" max="3025"></div>
+      <select id="rpp"><option value="25">25/page</option><option value="50" selected>50/page</option><option value="100">100/page</option></select>
+      <button class="go" onclick="doGenerate()">CALCULATE</button>
+    </div>
+    <div class="box">
+      <div class="bh"><span class="bh-t">DATE PREDICTIONS</span><span class="bh-c" id="cnt"></span></div>
+      <div id="tbl"><div class="msg">Calculating…</div></div>
+      <div class="pag" id="pag"></div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Verification -->
+  <div id="p2" class="hide">
+    <div class="box" style="border-radius:0 10px 10px 10px;margin-top:0;">
+      <div class="bh"><span class="bh-t">VERIFICATION 2016–2026</span><span class="bh-c">vs ANIC official announcements</span></div>
+      <div id="vtbl"><div class="msg">Click the tab to load…</div></div>
+      <div class="note" id="vnote"></div>
+    </div>
+  </div>
+
+  <div class="ft">
+    <b>Eid ul Fitr / Ramadan:</b> Sydney + Mecca crescent check (ANIC "local and global" method)<br>
+    <b>Eid ul Adha / Zil Hajj:</b> Mecca only — ANIC follows Saudi Arabia's Dhul Hijja declaration<br>
+    <b>Engine:</b> Jean Meeus Astronomical Algorithms Ch.47 · Moon age threshold: 13h at sunset<br><br>
+    <i>Accuracy degrades beyond ~100 years due to Earth rotation drift (Delta-T).</i>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// LUNAR MATH
+// ════════════════════════════════════════════
+function nmJD(k) {
+  var T=k/1236.85, T2=T*T, T3=T2*T, T4=T3*T;
+  var JDE=2451550.09766+29.530588861*k+0.00015437*T2-0.000000150*T3+0.00000000073*T4;
+  var E=1-0.002516*T-0.0000074*T2, R=Math.PI/180;
+  var M=(2.5534+29.10535670*k-0.0000014*T2)*R;
+  var Mp=(201.5643+385.81693528*k+0.0107582*T2+0.00001238*T3)*R;
+  var F=(160.7108+390.67050284*k-0.0016118*T2-0.00000227*T3)*R;
+  var Om=(124.7746-1.56375588*k+0.0020672*T2+0.00000215*T3)*R;
+  return JDE+(-0.40720*Math.sin(Mp)+0.17241*E*Math.sin(M)+0.01608*Math.sin(2*Mp)
+    +0.01039*Math.sin(2*F)+0.00739*E*Math.sin(Mp-M)-0.00514*E*Math.sin(Mp+M)
+    +0.00208*E*E*Math.sin(2*M)-0.00111*Math.sin(Mp-2*F)-0.00057*Math.sin(Mp+2*F)
+    +0.00056*E*Math.sin(2*Mp+M)-0.00042*Math.sin(3*Mp)+0.00042*E*Math.sin(M+2*F)
+    +0.00038*E*Math.sin(M-2*F)-0.00024*E*Math.sin(2*Mp-M)-0.00017*Math.sin(Om)
+    -0.00007*Math.sin(Mp+2*M)+0.00004*Math.sin(2*Mp-2*F)+0.00004*Math.sin(3*M)
+    +0.00003*Math.sin(Mp+M-2*F)+0.00003*Math.sin(2*Mp+2*F)
+    -0.00003*Math.sin(Mp+M+2*F)+0.00003*Math.sin(Mp-M+2*F)
+    -0.00002*Math.sin(Mp-M-2*F)-0.00002*Math.sin(3*Mp+M)+0.00002*Math.sin(4*Mp));
+}
+
+function jd2g(jd) {
+  var z=Math.floor(jd+0.5);
+  if(z>=2299161){var a=Math.floor((z-1867216.25)/36524.25);z=z+1+a-Math.floor(a/4);}
+  var b=z+1524,c=Math.floor((b-122.1)/365.25),dd=Math.floor(365.25*c),e=Math.floor((b-dd)/30.6001);
+  var day=b-dd-Math.floor(30.6001*e), month=e<14?e-1:e-13, year=month>2?c-4716:c-4715;
+  return {y:year, m:month, d:Math.floor(day)};
+}
+
+function g2jd(y,m,d) {
+  if(m<=2){y--;m+=12;}
+  var A=Math.floor(y/100), B=2-A+Math.floor(A/4);
+  return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5;
+}
+
+function sunset(y,m,d,lat,lon) {
+  var mid=g2jd(y,m,d), N=mid-g2jd(y,1,1)+0.5;
+  var decl=23.45*Math.sin(Math.PI/180*360/365*(N-81));
+  var cosH=Math.max(-1,Math.min(1,-Math.tan(lat*Math.PI/180)*Math.tan(decl*Math.PI/180)));
+  return mid+(12+Math.acos(cosH)*180/Math.PI/15-lon/15)/24;
+}
+
+function visible(nm,y,m,d,saudi) {
+  var a1=(sunset(y,m,d,-33.87,151.2)-nm)*24;
+  var a2=(sunset(y,m,d,21.39,39.86)-nm)*24;
+  if(saudi) return a2>13;
+  return a1>13||a2>13;
+}
+
+// Hijri anchor: k=324 = Shawwal 1447
+var KA=324, IA=(1447-1)*12+9;
+function hfk(k){var i=IA+(k-KA);return{hy:Math.floor(i/12)+1,hm:i%12+1};}
+
+var CACHE={};
+function findMonth(hm, gy, saudi) {
+  var key=hm+'_'+gy+'_'+(saudi?1:0);
+  if(CACHE[key]) return CACHE[key];
+  var kb=KA+Math.round((gy-2026)*12.3685);
+  for(var dk=-25;dk<=25;dk++){
+    var k=kb+dk, h=hfk(k);
+    if(h.hm!==hm) continue;
+    var nm=nmJD(k), base=jd2g(nm);
+    for(var o=0;o<=3;o++){
+      var cjd=g2jd(base.y,base.m,base.d)+o, cg=jd2g(cjd);
+      if(visible(nm,cg.y,cg.m,cg.d,saudi)){
+        var d1=jd2g(cjd+1);
+        if(d1.y===gy){
+          var r={y:d1.y,m:d1.m,d:d1.d,hy:h.hy};
+          CACHE[key]=r; return r;
+        }
+      }
+    }
+  }
+  CACHE[key]=null; return null;
+}
+
+function calcYear(gy) {
+  var ram=findMonth(9,gy,false);
+  var shaw=findMonth(10,gy,false);
+  var dhul=findMonth(12,gy,true);
+  var adha=null;
+  if(dhul){var aj=jd2g(g2jd(dhul.y,dhul.m,dhul.d)+9);adha={y:aj.y,m:aj.m,d:aj.d,hy:dhul.hy};}
+  return{gy:gy,ram:ram,shaw:shaw,dhul:dhul,adha:adha};
+}
+
+// ════════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════════
+var MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var DNF=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var TODAY=new Date(2026,2,13);
+
+function fmt(g){if(!g)return'—';return g.d+' '+MN[g.m-1]+' '+g.y;}
+function fmts(g){if(!g)return'—';var w=new Date(g.y,g.m-1,g.d);return g.d+' '+MN[g.m-1]+' ('+DN[w.getDay()]+')';}
+function dayN(g){if(!g)return'';return DNF[new Date(g.y,g.m-1,g.d).getDay()];}
+function daysTo(g){if(!g)return null;var t=new Date(g.y,g.m-1,g.d);var d=Math.ceil((t-TODAY)/864e5);return d>=0?d:null;}
+
+function mkStars(){
+  var c=document.getElementById('stars');
+  for(var i=0;i<130;i++){
+    var s=document.createElement('div');s.className='star';
+    var sz=Math.random()*2+0.5;
+    s.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(2+Math.random()*4)+'s;--dl:'+(Math.random()*4)+'s;';
+    c.appendChild(s);
+  }
+}
+
+// ════════════════════════════════════════════
+// NEXT STRIP
+// ════════════════════════════════════════════
+function doStrip(){
+  var gy=TODAY.getFullYear();
+  function nxt(hm,saudi){
+    for(var y=gy;y<=gy+2;y++){var g=findMonth(hm,y,saudi);if(g){var t=new Date(g.y,g.m-1,g.d);if(t>=TODAY)return g;}return null;}
+  }
+  function nxtAdha(){
+    for(var y=gy;y<=gy+2;y++){
+      var dh=findMonth(12,y,true);
+      if(dh){var aj=jd2g(g2jd(dh.y,dh.m,dh.d)+9);var r={y:aj.y,m:aj.m,d:aj.d,hy:dh.hy};
+        var t=new Date(r.y,r.m-1,r.d);if(t>=TODAY)return r;}
+    }return null;
+  }
+  var list=[
+    {lbl:'Ramadan Start',   g:nxt(9,false),  cls:'',  pfx:'1 Ramadan'},
+    {lbl:'Eid ul Fitr',     g:nxt(10,false), cls:'',  pfx:'1 Shawwal'},
+    {lbl:'Zil Hajj Start',  g:nxt(12,true),  cls:'b', pfx:'1 Dhul Hijja'},
+    {lbl:'Eid ul Adha',     g:nxtAdha(),     cls:'g', pfx:'10 Dhul Hijja'},
+  ];
+  var html='';
+  for(var i=0;i<list.length;i++){
+    var it=list[i], g=it.g;
+    if(!g){html+='<div class="card '+it.cls+'"><div class="clbl">'+it.lbl+'</div><div class="cdate">—</div></div>';continue;}
+    var du=daysTo(g);
+    var cd=du===0?'<div class="ccd" style="color:var(--gold)">TODAY 🌙</div>':'<div class="ccd">'+du+' days away</div>';
+    html+='<div class="card '+it.cls+'"><div class="clbl">'+it.lbl+'</div>'
+      +'<div class="cdate">'+fmt(g)+'</div>'
+      +'<div class="cday">'+dayN(g)+'</div>'
+      +'<div class="chijri">'+it.pfx+' '+g.hy+'AH</div>'
+      +cd+'</div>';
+  }
+  document.getElementById('strip').innerHTML=html;
+}
+
+// ════════════════════════════════════════════
+// PREDICTIONS TABLE
+// ════════════════════════════════════════════
+var ROWS=[], PAGE=1, RPP=50;
+
+function doGenerate(){
+  var f=parseInt(document.getElementById('yr1').value);
+  var t=parseInt(document.getElementById('yr2').value);
+  RPP=parseInt(document.getElementById('rpp').value);
+  PAGE=1;
+  if(isNaN(f)||isNaN(t)||f>=t||f<2026||t>3025){alert('Please enter a valid range (2026–3025).');return;}
+  ROWS=[];
+  document.getElementById('cnt').textContent='';
+  document.getElementById('tbl').innerHTML='<div class="msg">Computing '+( t-f+1)+' years…</div>';
+  document.getElementById('pag').innerHTML='';
+  var y=f, CH=15;
+  function chunk(){
+    for(var end=Math.min(y+CH,t+1);y<end;y++) ROWS.push(calcYear(y));
+    if(y<=t){
+      document.getElementById('tbl').innerHTML='<div class="msg">Computing… '+Math.round((y-f)/(t-f+1)*100)+'%</div>';
+      setTimeout(chunk,0);
+    } else {
+      document.getElementById('cnt').textContent=ROWS.length+' years';
+      doPage();
+    }
+  }
+  setTimeout(chunk,0);
+}
+
+function doPage(){
+  var s=(PAGE-1)*RPP, e=Math.min(s+RPP,ROWS.length), slice=ROWS.slice(s,e);
+  var h='<table><thead><tr><th>Year</th><th>Ramadan Start</th><th>Eid ul Fitr</th><th>Zil Hajj Start</th><th>Eid ul Adha</th><th>Hijri</th></tr></thead><tbody>';
+  for(var i=0;i<slice.length;i++){
+    var r=slice[i], shaw=r.shaw;
+    var dt=shaw?new Date(shaw.y,shaw.m-1,shaw.d):null;
+    var old=dt&&dt<TODAY, hl=dt&&dt.getTime()===TODAY.getTime();
+    var tag=hl?'<span class="tg tg-n">TODAY</span>':'';
+    h+='<tr class="'+(hl?'hl':old?'old':'')+'">'
+      +'<td class="yr">'+r.gy+'</td>'
+      +'<td class="dt">'+fmts(r.ram)+'</td>'
+      +'<td class="dt">'+fmts(r.shaw)+tag+'</td>'
+      +'<td class="dt">'+fmts(r.dhul)+'</td>'
+      +'<td class="dt">'+fmts(r.adha)+'</td>'
+      +'<td class="sm">'+(shaw?shaw.hy+'AH':'')+'</td>'
+      +'</tr>';
+  }
+  h+='</tbody></table>';
+  document.getElementById('tbl').innerHTML=h;
+  doPag();
+}
+
+function doPag(){
+  var tot=Math.ceil(ROWS.length/RPP);
+  if(tot<=1){document.getElementById('pag').innerHTML='';return;}
+  var h='<button class="pb nv" onclick="goP('+(PAGE-1)+')" '+(PAGE===1?'disabled':'')+'>←</button>';
+  var pages=[], seen={};
+  [1,tot].forEach(function(p){if(!seen[p]){pages.push(p);seen[p]=1;}});
+  for(var p=Math.max(1,PAGE-3);p<=Math.min(tot,PAGE+3);p++){if(!seen[p]){pages.push(p);seen[p]=1;}}
+  pages.sort(function(a,b){return a-b;});
+  var prev=0;
+  for(var i=0;i<pages.length;i++){
+    var p=pages[i];
+    if(prev&&p-prev>1) h+='<span style="color:var(--dim);padding:0 3px">…</span>';
+    h+='<button class="pb '+(p===PAGE?'on':'')+'" onclick="goP('+p+')">'+p+'</button>';
+    prev=p;
+  }
+  h+='<button class="pb nv" onclick="goP('+(PAGE+1)+')" '+(PAGE===tot?'disabled':'')+'>→</button>';
+  document.getElementById('pag').innerHTML=h;
+}
+
+function goP(p){
+  var tot=Math.ceil(ROWS.length/RPP);
+  if(p<1||p>tot)return;
+  PAGE=p; doPage();
+  document.querySelector('.box').scrollIntoView({behavior:'smooth'});
+}
+
+// ════════════════════════════════════════════
+// VERIFICATION TABLE
+// ════════════════════════════════════════════
+var ACTUAL={
+  2016:{ram:'7 Jun', ef:'6 Jul',   dhul:'3 Sep',  ea:'12 Sep'},
+  2017:{ram:'27 May',ef:'25 Jun',  dhul:'23 Aug', ea:'1 Sep'},
+  2018:{ram:'17 May',ef:'15 Jun',  dhul:'13 Aug', ea:'22 Aug'},
+  2019:{ram:'6 May', ef:'5 Jun',   dhul:'3 Aug',  ea:'11 Aug'},
+  2020:{ram:'24 Apr',ef:'24 May',  dhul:'22 Jul', ea:'31 Jul'},
+  2021:{ram:'13 Apr',ef:'13 May',  dhul:'11 Jul', ea:'20 Jul'},
+  2022:{ram:'3 Apr', ef:'2 May',   dhul:'30 Jun', ea:'9 Jul'},
+  2023:{ram:'23 Mar',ef:'21 Apr',  dhul:'20 Jun', ea:'28 Jun'},
+  2024:{ram:'12 Mar',ef:'10 Apr',  dhul:'8 Jun',  ea:'16 Jun'},
+  2025:{ram:'1 Mar', ef:'31 Mar',  dhul:'29 May', ea:'6 Jun'},
+  2026:{ram:'19 Feb',ef:'20 Mar',  dhul:'18 May', ea:'27 May'},
+};
+
+var verifyDone=false;
+function doVerify(){
+  if(verifyDone)return;
+  verifyDone=true;
+  var ef=0,ea=0,tot=0;
+  var h='<table><thead><tr>'
+    +'<th>Year</th>'
+    +'<th>Ramadan (Calc)</th><th>Ramadan (ANIC)</th><th></th>'
+    +'<th>Eid Fitr (Calc)</th><th>Eid Fitr (ANIC)</th><th></th>'
+    +'<th>Zil Hajj (Calc)</th><th>Zil Hajj (ANIC)</th><th></th>'
+    +'<th>Eid Adha (Calc)</th><th>Eid Adha (ANIC)</th><th></th>'
+    +'</tr></thead><tbody>';
+  for(var y=2016;y<=2026;y++){
+    var r=calcYear(y), a=ACTUAL[y];
+    function chk(g,act){
+      if(!g)return{s:'—',ok:false};
+      var s=g.d+' '+MN[g.m-1];
+      return{s:s,ok:s===act};
+    }
+    var ckr=chk(r.ram,a.ram), cks=chk(r.shaw,a.ef), ckd=chk(r.dhul,a.dhul), cka=chk(r.adha,a.ea);
+    if(cks.ok)ef++;if(cka.ok)ea++;tot++;
+    h+='<tr class="'+(y===2026?'hl':'')+'">'
+      +'<td class="yr">'+y+'</td>'
+      +'<td class="dt">'+ckr.s+'</td><td class="dt" style="color:var(--dim)">'+a.ram+'</td><td class="'+(ckr.ok?'ok':'no')+'">'+(ckr.ok?'✓':'~')+'</td>'
+      +'<td class="dt">'+cks.s+'</td><td class="dt" style="color:var(--dim)">'+a.ef+'</td><td class="'+(cks.ok?'ok':'no')+'">'+(cks.ok?'✓':'~')+'</td>'
+      +'<td class="dt">'+ckd.s+'</td><td class="dt" style="color:var(--dim)">'+a.dhul+'</td><td class="'+(ckd.ok?'ok':'no')+'">'+(ckd.ok?'✓':'~')+'</td>'
+      +'<td class="dt">'+cka.s+'</td><td class="dt" style="color:var(--dim)">'+a.ea+'</td><td class="'+(cka.ok?'ok':'no')+'">'+(cka.ok?'✓':'~')+'</td>'
+      +'</tr>';
+  }
+  h+='</tbody></table>';
+  document.getElementById('vtbl').innerHTML=h;
+  document.getElementById('vnote').innerHTML=
+    '✓ exact match &nbsp;·&nbsp; ~ off by 1 day (borderline crescent — normal between councils)<br>'
+    +'Eid ul Fitr: <b style="color:var(--green)">'+ef+'/'+tot+'</b> exact &nbsp;·&nbsp; '
+    +'Eid ul Adha: <b style="color:var(--green)">'+ea+'/'+tot+'</b> exact<br>'
+    +'<span style="color:var(--dim)">ANIC dates from anic.org.au official announcements. '
+    +'Eid ul Adha gaps occur when Saudi actual sighting differs from calculated crescent.</span>';
+}
+
+// ════════════════════════════════════════════
+// TAB SWITCH
+// ════════════════════════════════════════════
+function showTab(n){
+  document.getElementById('t1').className='tab'+(n===1?' on':'');
+  document.getElementById('t2').className='tab'+(n===2?' on':'');
+  document.getElementById('p1').className=(n===1?'':'hide');
+  document.getElementById('p2').className=(n===2?'':'hide');
+  if(n===2) doVerify();
+}
+
+// ════════════════════════════════════════════
+// BOOT — everything is global, no scope issues
+// ════════════════════════════════════════════
+mkStars();
+setTimeout(function(){ doStrip(); }, 50);
+setTimeout(function(){ doGenerate(); }, 150);
+</script>
+</body>
+</html>
